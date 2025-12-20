@@ -17,6 +17,7 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->unsignedInteger('capacity_limit');
             $table->unsignedInteger('warning_threshold')->default(80);
+            $table->foreignId('user_id')->constrained('users');
             $table->timestamps();
         });
     }

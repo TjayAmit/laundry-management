@@ -2,32 +2,39 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class PermissionAndRoleSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $role = Role::create(['name' => 'customer']);
+        $guard = 'web';
+
+        // -------------------------
+        // CUSTOMER
+        // -------------------------
+        $customerRole = Role::firstOrCreate([
+            'name' => 'customer',
+            'guard_name' => $guard,
+        ]);
 
         $customerPermissions = [
             'read order',
             'cancel order',
-            'edit user'
+            'edit user',
         ];
 
+        $this->syncPermissions($customerRole, $customerPermissions, $guard);
 
-        Permission::insert($customerPermissions)->each(function ($permission) use ($role) {
-            $role->givePermissionTo($permission);
-        });
-
-        $role = Role::create(['name' => 'staff']);
+        // -------------------------
+        // STAFF
+        // -------------------------
+        $staffRole = Role::firstOrCreate([
+            'name' => 'staff',
+            'guard_name' => $guard,
+        ]);
 
         $staffPermissions = [
             'read order',
@@ -35,41 +42,60 @@ class PermissionAndRoleSeeder extends Seeder
             'cancel order',
             'create order',
             'read user detail',
-            'read transaction'
+            'read transaction',
         ];
 
-        Permission::insert($staffPermissions)->each(function ($permission) use ($role) {
-            $role->givePermissionTo($permission);
-        });
+        $this->syncPermissions($staffRole, $staffPermissions, $guard);
 
-        $role = Role::create(['name' => 'owner']);
+        // -------------------------
+        // OWNER
+        // -------------------------
+        $ownerRole = Role::firstOrCreate([
+            'name' => 'owner',
+            'guard_name' => $guard,
+        ]);
 
-        $ownerP = [
+        $ownerPermissions = array_merge($staffPermissions, [
             'create branch',
             'read branch',
             'edit branch',
-            'delete branch'
-        ];
+            'delete branch',
+        ]);
 
-        $ownerPermissions = array_merge($ownerP, $staffPermissions);
+        $this->syncPermissions($ownerRole, $ownerPermissions, $guard);
 
-        Permission::insert($ownerPermissions)->each(function ($permission) use ($role) {
+        // -------------------------
+        // ADMIN
+        // -------------------------
+        $adminRole = Role::firstOrCreate([
+            'name' => 'admin',
+            'guard_name' => $guard,
+        ]);
+
+        $adminPermissions = array_merge(
+            $customerPermissions,
+            $staffPermissions,
+            $ownerPermissions,
+            [
+                'create user',
+                'read user',
+                'update user',
+                'delete user',
+            ]
+        );
+
+        $this->syncPermissions($adminRole, $adminPermissions, $guard);
+    }
+
+    private function syncPermissions(Role $role, array $permissions, string $guard): void
+    {
+        foreach ($permissions as $permissionName) {
+            $permission = Permission::firstOrCreate([
+                'name' => $permissionName,
+                'guard_name' => $guard,
+            ]);
+
             $role->givePermissionTo($permission);
-        });
-
-        $role = Role::create(['name' => 'admin']);
-
-        $adminP = [
-            'create user',
-            'read user',
-            'update user',
-            'delete user'
-        ];
-
-        $permissions = array_merge($adminP, $staffPermissions, $ownerPermissions, $customerPermissions);
-
-        Permission::insert($permissions)->each(function ($permission) use ($role) {
-            $role->givePermissionTo($permission);
-        });
+        }
     }
 }
