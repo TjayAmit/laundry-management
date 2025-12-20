@@ -9,4 +9,11 @@ class Notification extends Model
 {
     /** @use HasFactory<\Database\Factories\NotificationFactory> */
     use HasFactory;
+
+    protected $fillable = [
+        'notifiable',
+        'type',
+        'data',
+        'sent_at'
+    ];
 }
