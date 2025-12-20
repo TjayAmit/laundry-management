@@ -4,6 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+use App\Enums\OrderStatus;
+
 return new class extends Migration
 {
     /**
@@ -14,16 +16,7 @@ return new class extends Migration
         Schema::create('order_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
-
-            $table->enum('status', [
-                'received',
-                'washing',
-                'drying',
-                'folding',
-                'ready',
-                'claimed'
-            ])->index();
-
+            $table->enum('status', OrderStatus::cases())->default(OrderStatus::RECEIVED)->index();
             $table->foreignId('changed_by')->nullable()->constrained('users');
             $table->timestamps();
         });

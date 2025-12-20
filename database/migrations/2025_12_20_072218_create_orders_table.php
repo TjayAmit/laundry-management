@@ -4,6 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+use App\Enums\OrderStatus;
+
 return new class extends Migration
 {
     /**
@@ -16,15 +18,7 @@ return new class extends Migration
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
             $table->foreignId('customer_id')->constrained()->cascadeOnDelete();
 
-            $table->enum('status', [
-                'received',
-                'washing',
-                'drying',
-                'folding',
-                'ready',
-                'claimed',
-                'cancelled'
-            ])->index();
+            $table->enum('status', OrderStatus::cases())->default(OrderStatus::RECEIVED)->index();
 
             $table->decimal('total_amount', 10, 2)->default(0);
 
