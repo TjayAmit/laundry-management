@@ -9,7 +9,7 @@ use App\Filament\Resources\Laundries\Pages\ViewLaundries;
 use App\Filament\Resources\Laundries\Schemas\LaundriesForm;
 use App\Filament\Resources\Laundries\Schemas\LaundriesInfolist;
 use App\Filament\Resources\Laundries\Tables\LaundriesTable;
-use App\Models\User;
+use App\Models\Laundry;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -19,11 +19,11 @@ use UnitEnum;
 
 class LaundriesResource extends Resource
 {
-    protected static ?string $model = User::class;
+    protected static ?string $model = Laundry::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
     protected static string | UnitEnum | null $navigationGroup = 'Report Management';
-    protected static ?string $recordTitleAttribute = 'User';
+    protected static ?string $recordTitleAttribute = 'Laundry';
 
     public static function form(Schema $schema): Schema
     {

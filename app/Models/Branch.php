@@ -16,11 +16,11 @@ class Branch extends Model
         'address',
         'capacity_limit',
         'warning_threshold',
-        'user_id',
+        'laundry_id',
     ];
 
-    public function user(): BelongsTo
+    public function laundry(): BelongsTo
     {
-        return $this->BelongsTo(User::class);
+        return $this->BelongsTo(Laundry::class);
     }
 }

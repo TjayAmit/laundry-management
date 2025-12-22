@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('branches', function (Blueprint $table) {
+        Schema::create('laundries', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained('users');
             $table->string('name');
+            $table->string('email')->unique();
+            $table->string('contact')->nullable();
             $table->text('address')->nullable();
-            $table->unsignedInteger('capacity_limit');
-            $table->unsignedInteger('warning_threshold')->default(80);
-            $table->foreignId('laundry_id')->constrained('laundries');
+            $table->softDeletes();
             $table->timestamps();
         });
     }
@@ -27,6 +28,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('branches');
+        Schema::table('laundries', function (Blueprint $table) {
+            $table->dropForeign('laundries_user_id_foreign');
+        });
+
+        Schema::dropIfExists('laundries');
     }
 };
