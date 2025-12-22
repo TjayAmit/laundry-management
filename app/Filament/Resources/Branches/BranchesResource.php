@@ -39,10 +39,19 @@ class BranchesResource extends Resource
     {
         return parent::getEloquentQuery()
             ->withCount([
+                // Active orders (example: waiting only, or expand later)
                 'orders as active_orders_count' => fn ($q) =>
                 $q->whereIn('status', [
                     'received',
                 ]),
+
+                // Waiting orders
+                'orders as waiting_orders_count' => fn ($q) =>
+                $q->where('status', 'received'),
+
+                // Washing orders
+                'orders as washing_orders_count' => fn ($q) =>
+                $q->where('status', 'washing'),
             ]);
     }
 

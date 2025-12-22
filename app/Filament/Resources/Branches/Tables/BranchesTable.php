@@ -16,10 +16,17 @@ class BranchesTable
         return $table
             ->columns([
                 TextColumn::make('id')->label('ID'),
+                TextColumn::make('laundry.name')->label('Owner'),
                 TextColumn::make('name')->label('Name'),
                 TextColumn::make('address')->label('Address'),
-                TextColumn::make('capacity_limit')->label('Capacity Limit'),
-                TextColumn::make('warning_threshold')->label('Threshold'),
+                TextColumn::make('waiting_orders_count')
+                    ->label('Waiting')
+                    ->badge()
+                    ->alignCenter(),
+                TextColumn::make('washing_orders_count')
+                    ->label('Washing')
+                    ->badge()
+                    ->alignCenter(),
                 TextColumn::make('active_orders_count')
                     ->label('Orders')
                     ->sortable()

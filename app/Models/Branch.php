@@ -48,7 +48,7 @@ class Branch extends Model
 
         return match (true) {
             $this->active_orders_count === 0 =>
-            CapacityStatusEnum::NO_ORDERS,
+            CapacityStatusEnum::NO_ACTIVE_ORDERS,
 
             $this->capacity_usage >= 100 =>
             CapacityStatusEnum::CRITICAL,
