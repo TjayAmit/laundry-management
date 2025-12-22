@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Enums\LaundryShopStatusEnum;
 
 return new class extends Migration
 {
@@ -18,6 +19,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('contact')->nullable();
             $table->text('address')->nullable();
+            $table->enum('status', LaundryShopStatusEnum::cases())->default(LaundryShopStatusEnum::ACTIVE);
             $table->softDeletes();
             $table->timestamps();
         });

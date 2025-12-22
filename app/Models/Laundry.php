@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\LaundryShopStatusEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,6 +24,7 @@ class Laundry extends Model
 
     protected $casts = [
         'deleted_at' => 'datetime',
+        'status' => LaundryShopStatusEnum::class,
     ];
 
     public function user(): BelongsTo
