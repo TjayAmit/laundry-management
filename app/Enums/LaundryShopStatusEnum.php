@@ -6,14 +6,23 @@ enum LaundryShopStatusEnum: string
 {
     case ACTIVE = 'active';
     case INACTIVE = 'inactive';
-    case PENDING = 'pending';
+    case SUSPENDED = 'suspended';
 
     public function label(): string
     {
         return match ($this) {
-            self::ACTIVE => 'Active',
-            self::INACTIVE => 'Inactive',
-            self::PENDING => 'Pending'
+            self::ACTIVE    => 'Active',
+            self::INACTIVE  => 'Inactive',
+            self::SUSPENDED => 'Suspended',
+        };
+    }
+
+    public function color(): string
+    {
+        return match ($this) {
+            self::ACTIVE    => 'success',
+            self::INACTIVE  => 'gray',
+            self::SUSPENDED => 'danger',
         };
     }
 }
