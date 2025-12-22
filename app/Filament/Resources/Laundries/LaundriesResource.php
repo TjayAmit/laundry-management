@@ -23,7 +23,7 @@ class LaundriesResource extends Resource
     protected static ?string $model = Laundry::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
-    protected static string | UnitEnum | null $navigationGroup = 'Report Management';
+    protected static string | UnitEnum | null $navigationGroup = 'Laundry Management';
     protected static ?string $recordTitleAttribute = 'Laundry';
 
     public static function form(Schema $schema): Schema
