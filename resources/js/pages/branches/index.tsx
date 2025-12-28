@@ -31,8 +31,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Index({ branches }: Props) {
     const [branchesData, setBranchesData] = useState<Branch[]>(branches);
 
-    console.info(branchesData);
-
     const handleStatusChange = (id: number, status: BranchStatus) => {
         setBranchesData(
             branchesData.map((b) => (b.id === id ? { ...b, status } : b)),

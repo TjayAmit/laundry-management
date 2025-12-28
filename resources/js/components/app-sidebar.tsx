@@ -24,7 +24,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Branches',
-        href: 'branches',
+        href: { url: '/branches', method: 'get' },
         icon: Container,
     },
 ];
