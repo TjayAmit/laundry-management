@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CapacityStatusEnum;
+use App\Enums\LaundryShopBranchStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,7 +19,16 @@ class Branch extends Model
         'address',
         'capacity_limit',
         'warning_threshold',
+        'time_open',
+        'time_close',
+        'latitude',
+        'longitude',
+        'status',
         'laundry_id',
+    ];
+
+    protected $casts = [
+        'status' => LaundryShopBranchStatus::class,
     ];
 
     public function laundry(): BelongsTo
