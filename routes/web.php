@@ -17,7 +17,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('branches', function () {
         return Inertia::render('branches/index');
-    })->name('branches');
+    })->name('branches.index');
+
+    Route::get('branches/create', function () {
+        return Inertia::render('branches/create');
+    })->name('branches.create');
 });
 
 require __DIR__.'/settings.php';

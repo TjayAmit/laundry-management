@@ -1,7 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { dashboard } from '@/routes';
 import { Plus } from 'lucide-react';
 
@@ -17,12 +17,6 @@ interface Branch {
     status: BranchStatus;
 }
 
-interface BranchFormData {
-    name: string;
-    address: string;
-    status: BranchStatus;
-}
-
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Branch Management',
@@ -31,7 +25,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Index() {
-    const [branches, setBranches] = useState<Branch[]>([
+    const [branchesData, setBranchesData] = useState<Branch[]>([
         {
             id: 1,
             name: 'Main Branch',
@@ -51,63 +45,16 @@ export default function Index() {
             status: 'open',
         },
     ]);
-    const [showModal, setShowModal] = useState(false);
-    const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
-    const [formData, setFormData] = useState<BranchFormData>({
-        name: '',
-        address: '',
-        status: 'open',
-    });
-
-    const handleOpenModal = (branch?: Branch) => {
-        if (branch) {
-            setEditingBranch(branch);
-            setFormData({
-                name: branch.name,
-                address: branch.address,
-                status: branch.status,
-            });
-        } else {
-            setEditingBranch(null);
-            setFormData({ name: '', address: '', status: 'open' });
-        }
-        setShowModal(true);
-    };
-
-    const handleCloseModal = () => {
-        setShowModal(false);
-        setEditingBranch(null);
-        setFormData({ name: '', address: '', status: 'open' });
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (editingBranch) {
-            setBranches(
-                branches.map((b) =>
-                    b.id === editingBranch.id ? { ...b, ...formData } : b,
-                ),
-            );
-        } else {
-            const newBranch: Branch = {
-                id: Math.max(...branches.map((b) => b.id), 0) + 1,
-                ...formData,
-                activeOrders: 0,
-                toBeReleased: 0,
-                todayIncome: 0,
-            };
-            setBranches([...branches, newBranch]);
-        }
-        handleCloseModal();
-    };
 
     const handleStatusChange = (id: number, status: BranchStatus) => {
-        setBranches(branches.map((b) => (b.id === id ? { ...b, status } : b)));
+        setBranchesData(
+            branchesData.map((b) => (b.id === id ? { ...b, status } : b)),
+        );
     };
 
     const handleDelete = (id: number) => {
         if (confirm('Are you sure you want to delete this branch?')) {
-            setBranches(branches.filter((b) => b.id !== id));
+            setBranchesData(branchesData.filter((b) => b.id !== id));
         }
     };
 
@@ -135,13 +82,13 @@ export default function Index() {
                             Manage your branches, track orders and income
                         </p>
                     </div>
-                    <button
-                        onClick={() => handleOpenModal()}
+                    <Link
+                        href={'/branches/create'}
                         className="flex h-11 items-center gap-2 rounded-lg bg-gradient-to-r from-[#ff6b35] to-[#ff5722] px-6 shadow-lg shadow-[#ff6b35]/25 transition-all duration-300 hover:from-[#ff5722] hover:to-[#ff6b35]"
                     >
                         <Plus className="h-5 w-5" />
                         Add Branch
-                    </button>
+                    </Link>
                 </div>
 
                 <div className="overflow-hidden rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm">
@@ -173,7 +120,7 @@ export default function Index() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {branches.map((branch) => (
+                                {branchesData.map((branch) => (
                                     <tr
                                         key={branch.id}
                                         className="border-b border-white/5 transition-colors hover:bg-white/5"
@@ -209,14 +156,12 @@ export default function Index() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    onClick={() =>
-                                                        handleOpenModal(branch)
-                                                    }
+                                                <Link
+                                                    href={'/branches/create'}
                                                     className="rounded-lg bg-white/10 px-3 py-1 text-sm transition-colors hover:bg-white/20"
                                                 >
                                                     Edit
-                                                </button>
+                                                </Link>
                                                 <div className="relative">
                                                     <select
                                                         value={branch.status}
@@ -269,91 +214,6 @@ export default function Index() {
                         </table>
                     </div>
                 </div>
-
-                {showModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                        <div className="w-full max-w-md rounded-xl border border-white/10 bg-gradient-to-br from-[#1a1410] to-[#0a0a0a] p-6 shadow-2xl">
-                            <h2 className="mb-6 text-2xl font-bold">
-                                {editingBranch
-                                    ? 'Edit Branch'
-                                    : 'Add New Branch'}
-                            </h2>
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium">
-                                        Branch Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                name: e.target.value,
-                                            })
-                                        }
-                                        className="w-full rounded-lg border border-white/20 bg-black/40 px-4 py-2 text-white transition-colors focus:border-[#ff6b35] focus:outline-none"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium">
-                                        Address
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.address}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                address: e.target.value,
-                                            })
-                                        }
-                                        className="w-full rounded-lg border border-white/20 bg-black/40 px-4 py-2 text-white transition-colors focus:border-[#ff6b35] focus:outline-none"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium">
-                                        Status
-                                    </label>
-                                    <select
-                                        value={formData.status}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                status: e.target
-                                                    .value as BranchStatus,
-                                            })
-                                        }
-                                        className="w-full rounded-lg border border-white/20 bg-black/40 px-4 py-2 text-white transition-colors focus:border-[#ff6b35] focus:outline-none"
-                                    >
-                                        <option value="open">Open</option>
-                                        <option value="closed">Closed</option>
-                                        <option value="maintenance">
-                                            Maintenance
-                                        </option>
-                                    </select>
-                                </div>
-                                <div className="flex gap-3 pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={handleCloseModal}
-                                        className="flex-1 rounded-lg border border-white/20 bg-white/5 py-2 transition-colors hover:bg-white/10"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="flex-1 rounded-lg bg-gradient-to-r from-[#ff6b35] to-[#ff5722] py-2 shadow-lg shadow-[#ff6b35]/25 transition-all duration-300 hover:from-[#ff5722] hover:to-[#ff6b35]"
-                                    >
-                                        {editingBranch ? 'Update' : 'Create'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )}
             </div>
         </AppLayout>
     );
