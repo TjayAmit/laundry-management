@@ -54,6 +54,51 @@ export default function Dashboard({ stats }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
+            <div className="space-y-8 p-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold">
+                            Operations Overview
+                        </h1>
+                        <p className="mt-2 text-sm text-gray-400">
+                            An organization-wide view of operations, orders, and
+                            revenue performance.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <select
+                            className="bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e')] appearance-none rounded-lg border border-sidebar-border bg-white bg-[length:1.25rem] bg-[right_0.75rem_center] bg-no-repeat px-4 py-2 pr-10 text-sm font-medium text-neutral-900 shadow-sm transition-colors hover:bg-neutral-50 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-sidebar-border dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                            defaultValue={new Date().getMonth() + 1}
+                        >
+                            <option value={1}>January</option>
+                            <option value={2}>February</option>
+                            <option value={3}>March</option>
+                            <option value={4}>April</option>
+                            <option value={5}>May</option>
+                            <option value={6}>June</option>
+                            <option value={7}>July</option>
+                            <option value={8}>August</option>
+                            <option value={9}>September</option>
+                            <option value={10}>October</option>
+                            <option value={11}>November</option>
+                            <option value={12}>December</option>
+                        </select>
+                        <select
+                            className="bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e')] appearance-none rounded-lg border border-sidebar-border bg-white bg-[length:1.25rem] bg-[right_0.75rem_center] bg-no-repeat px-4 py-2 pr-10 text-sm font-medium text-neutral-900 shadow-sm transition-colors hover:bg-neutral-50 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-sidebar-border dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                            defaultValue={new Date().getFullYear()}
+                        >
+                            {Array.from(
+                                { length: 10 },
+                                (_, i) => new Date().getFullYear() - i,
+                            ).map((year) => (
+                                <option key={year} value={year}>
+                                    {year}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+            </div>
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 {data.subscriptionStatus && (
                     <div
