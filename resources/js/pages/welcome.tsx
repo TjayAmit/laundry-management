@@ -11,7 +11,7 @@ export default function Welcome({
 
     return (
         <>
-            <Head title="Welcome">
+            <Head title="Welcome to WashLy">
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link
                     href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600"
@@ -46,32 +46,54 @@ export default function Welcome({
             </Head>
             <div className="flex min-h-screen flex-col items-center bg-gradient-to-br from-[#0a0a0a] via-[#1a1410] to-[#0a0a0a] px-4 py-6 text-white sm:px-6 lg:justify-center lg:p-8">
                 <header className="mb-8 w-full max-w-[335px] text-sm not-has-[nav]:hidden sm:mb-6 md:max-w-3xl lg:max-w-7xl">
-                    <nav className="flex items-center justify-end gap-2 sm:gap-4">
-                        {auth.user ? (
-                            <Link
-                                href={dashboard()}
-                                className="inline-block rounded-lg border border-[#ff6b35]/30 bg-[#ff6b35]/10 px-4 py-2.5 text-sm leading-normal font-medium text-[#ff6b35] transition-all hover:border-[#ff6b35] hover:bg-[#ff6b35]/20 sm:px-5"
-                            >
-                                Dashboard
-                            </Link>
-                        ) : (
-                            <>
-                                <Link
-                                    href={login()}
-                                    className="inline-block rounded-lg border border-transparent px-4 py-2.5 text-sm leading-normal font-medium text-gray-300 transition-all hover:text-[#ff6b35] sm:px-5"
+                    <nav className="flex items-center justify-between gap-2 sm:gap-4">
+                        <div className="flex items-center gap-2">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#ff6b35] to-[#ff5722]">
+                                <svg
+                                    className="h-6 w-6 text-white"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
                                 >
-                                    Log in
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                                    />
+                                </svg>
+                            </div>
+                            <span className="text-xl font-bold text-white">
+                                WashLy
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2 sm:gap-4">
+                            {auth.user ? (
+                                <Link
+                                    href={dashboard()}
+                                    className="inline-block rounded-lg border border-[#ff6b35]/30 bg-[#ff6b35]/10 px-4 py-2.5 text-sm leading-normal font-medium text-[#ff6b35] transition-all hover:border-[#ff6b35] hover:bg-[#ff6b35]/20 sm:px-5"
+                                >
+                                    Dashboard
                                 </Link>
-                                {canRegister && (
+                            ) : (
+                                <>
                                     <Link
-                                        href={register()}
-                                        className="inline-block rounded-lg border border-[#ff6b35] bg-[#ff6b35] px-4 py-2.5 text-sm leading-normal font-medium text-white transition-all hover:border-[#ff5722] hover:bg-[#ff5722] sm:px-5"
+                                        href={login()}
+                                        className="inline-block rounded-lg border border-transparent px-4 py-2.5 text-sm leading-normal font-medium text-gray-300 transition-all hover:text-[#ff6b35] sm:px-5"
                                     >
-                                        Get Started
+                                        Log in
                                     </Link>
-                                )}
-                            </>
-                        )}
+                                    {canRegister && (
+                                        <Link
+                                            href={register()}
+                                            className="inline-block rounded-lg border border-[#ff6b35] bg-[#ff6b35] px-4 py-2.5 text-sm leading-normal font-medium text-white transition-all hover:border-[#ff5722] hover:bg-[#ff5722] sm:px-5"
+                                        >
+                                            Get Started
+                                        </Link>
+                                    )}
+                                </>
+                            )}
+                        </div>
                     </nav>
                 </header>
                 <div className="flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
@@ -92,7 +114,7 @@ export default function Welcome({
                                         d="M13 10V3L4 14h7v7l9-11h-7z"
                                     />
                                 </svg>
-                                Modern Laundry Management
+                                WashLy - Modern Laundry Management
                             </div>
                             <h1 className="mb-4 text-3xl leading-tight font-bold sm:text-4xl md:text-5xl lg:text-6xl">
                                 Streamline Your
@@ -384,8 +406,8 @@ export default function Welcome({
                 </g>
                 <footer className="mt-12 w-full text-center text-sm text-gray-500 sm:mt-16 lg:mt-20">
                     <p>
-                        &copy; {new Date().getFullYear()} Laundry Management
-                        System. All rights reserved.
+                        &copy; {new Date().getFullYear()} WashLy - Laundry
+                        Management System. All rights reserved.
                     </p>
                 </footer>
 
