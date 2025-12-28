@@ -44,13 +44,13 @@ export default function Welcome({
                     }
                 `}</style>
             </Head>
-            <div className="flex min-h-screen flex-col items-center bg-gradient-to-br from-[#0a0a0a] via-[#1a1410] to-[#0a0a0a] p-6 text-white lg:justify-center lg:p-8">
-                <header className="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-7xl">
-                    <nav className="flex items-center justify-end gap-4">
+            <div className="flex min-h-screen flex-col items-center bg-gradient-to-br from-[#0a0a0a] via-[#1a1410] to-[#0a0a0a] px-4 py-6 text-white sm:px-6 lg:justify-center lg:p-8">
+                <header className="mb-8 w-full max-w-[335px] text-sm not-has-[nav]:hidden sm:mb-6 md:max-w-3xl lg:max-w-7xl">
+                    <nav className="flex items-center justify-end gap-2 sm:gap-4">
                         {auth.user ? (
                             <Link
                                 href={dashboard()}
-                                className="inline-block rounded-lg border border-[#ff6b35]/30 bg-[#ff6b35]/10 px-5 py-2 text-sm leading-normal font-medium text-[#ff6b35] transition-all hover:border-[#ff6b35] hover:bg-[#ff6b35]/20"
+                                className="inline-block rounded-lg border border-[#ff6b35]/30 bg-[#ff6b35]/10 px-4 py-2.5 text-sm leading-normal font-medium text-[#ff6b35] transition-all hover:border-[#ff6b35] hover:bg-[#ff6b35]/20 sm:px-5"
                             >
                                 Dashboard
                             </Link>
@@ -58,14 +58,14 @@ export default function Welcome({
                             <>
                                 <Link
                                     href={login()}
-                                    className="inline-block rounded-lg border border-transparent px-5 py-2 text-sm leading-normal font-medium text-gray-300 transition-all hover:text-[#ff6b35]"
+                                    className="inline-block rounded-lg border border-transparent px-4 py-2.5 text-sm leading-normal font-medium text-gray-300 transition-all hover:text-[#ff6b35] sm:px-5"
                                 >
                                     Log in
                                 </Link>
                                 {canRegister && (
                                     <Link
                                         href={register()}
-                                        className="inline-block rounded-lg border border-[#ff6b35] bg-[#ff6b35] px-5 py-2 text-sm leading-normal font-medium text-white transition-all hover:border-[#ff5722] hover:bg-[#ff5722]"
+                                        className="inline-block rounded-lg border border-[#ff6b35] bg-[#ff6b35] px-4 py-2.5 text-sm leading-normal font-medium text-white transition-all hover:border-[#ff5722] hover:bg-[#ff5722] sm:px-5"
                                     >
                                         Get Started
                                     </Link>
@@ -75,10 +75,10 @@ export default function Welcome({
                     </nav>
                 </header>
                 <div className="flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
-                    <main className="flex w-full max-w-[335px] flex-col lg:max-w-7xl">
+                    <main className="flex w-full max-w-[335px] flex-col md:max-w-3xl lg:max-w-7xl">
                         {/* Hero Section */}
-                        <div className="mb-12 text-center lg:mb-16">
-                            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#ff6b35]/30 bg-[#ff6b35]/10 px-4 py-2 text-sm font-medium text-[#ff6b35]">
+                        <div className="mb-10 text-center sm:mb-12 md:mb-14 lg:mb-16">
+                            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#ff6b35]/30 bg-[#ff6b35]/10 px-3 py-1.5 text-xs font-medium text-[#ff6b35] sm:px-4 sm:py-2 sm:text-sm">
                                 <svg
                                     className="h-4 w-4"
                                     fill="none"
@@ -94,25 +94,25 @@ export default function Welcome({
                                 </svg>
                                 Modern Laundry Management
                             </div>
-                            <h1 className="mb-4 text-4xl leading-tight font-bold lg:text-6xl">
+                            <h1 className="mb-4 text-3xl leading-tight font-bold sm:text-4xl md:text-5xl lg:text-6xl">
                                 Streamline Your
                                 <span className="block bg-gradient-to-r from-[#ff6b35] to-[#ff8c42] bg-clip-text text-transparent">
                                     Laundry Business
                                 </span>
                             </h1>
-                            <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-400 lg:text-xl">
+                            <p className="mx-auto mb-6 max-w-2xl text-base text-gray-400 sm:mb-8 sm:text-lg md:mb-8 md:px-4 md:text-lg lg:text-xl">
                                 Complete management solution for laundry
                                 services with real-time tracking, customer
                                 notifications, and QR-based transactions. Scale
                                 your business effortlessly.
                             </p>
-                            <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
                                 {!auth.user && (
                                     <>
                                         {canRegister && (
                                             <Link
                                                 href={register()}
-                                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#ff6b35] px-8 py-4 text-base font-semibold text-white transition-all hover:bg-[#ff5722] hover:shadow-lg hover:shadow-[#ff6b35]/50"
+                                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#ff6b35] px-6 py-3 text-base font-semibold text-white transition-all hover:bg-[#ff5722] hover:shadow-lg hover:shadow-[#ff6b35]/50 sm:px-8 sm:py-4"
                                             >
                                                 Get Started Free
                                                 <svg
@@ -132,7 +132,7 @@ export default function Welcome({
                                         )}
                                         <Link
                                             href={login()}
-                                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-700 bg-transparent px-8 py-4 text-base font-semibold text-gray-300 transition-all hover:border-[#ff6b35] hover:text-[#ff6b35]"
+                                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-700 bg-transparent px-6 py-3 text-base font-semibold text-gray-300 transition-all hover:border-[#ff6b35] hover:text-[#ff6b35] sm:px-8 sm:py-4"
                                         >
                                             Sign In
                                         </Link>
@@ -141,7 +141,7 @@ export default function Welcome({
                                 {auth.user && (
                                     <Link
                                         href={dashboard()}
-                                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#ff6b35] px-8 py-4 text-base font-semibold text-white transition-all hover:bg-[#ff5722] hover:shadow-lg hover:shadow-[#ff6b35]/50"
+                                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#ff6b35] px-6 py-3 text-base font-semibold text-white transition-all hover:bg-[#ff5722] hover:shadow-lg hover:shadow-[#ff6b35]/50 sm:px-8 sm:py-4"
                                     >
                                         Go to Dashboard
                                         <svg
@@ -163,9 +163,9 @@ export default function Welcome({
                         </div>
 
                         {/* Features Grid */}
-                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 md:gap-6 lg:grid-cols-4">
                             {/* Feature 1: Customer Notifications */}
-                            <div className="group rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/50 to-gray-900/30 p-6 backdrop-blur-sm transition-all hover:border-[#ff6b35]/50 hover:shadow-lg hover:shadow-[#ff6b35]/10">
+                            <div className="group rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/50 to-gray-900/30 p-5 backdrop-blur-sm transition-all hover:border-[#ff6b35]/50 hover:shadow-lg hover:shadow-[#ff6b35]/10 sm:p-6 md:p-7">
                                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#ff6b35]/10 text-[#ff6b35] transition-all group-hover:bg-[#ff6b35] group-hover:text-white">
                                     <svg
                                         className="h-6 w-6"
@@ -193,7 +193,7 @@ export default function Welcome({
                             </div>
 
                             {/* Feature 2: Branch Management */}
-                            <div className="group rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/50 to-gray-900/30 p-6 backdrop-blur-sm transition-all hover:border-[#ff6b35]/50 hover:shadow-lg hover:shadow-[#ff6b35]/10">
+                            <div className="group rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/50 to-gray-900/30 p-5 backdrop-blur-sm transition-all hover:border-[#ff6b35]/50 hover:shadow-lg hover:shadow-[#ff6b35]/10 sm:p-6 md:p-7">
                                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#ff6b35]/10 text-[#ff6b35] transition-all group-hover:bg-[#ff6b35] group-hover:text-white">
                                     <svg
                                         className="h-6 w-6"
@@ -221,7 +221,7 @@ export default function Welcome({
                             </div>
 
                             {/* Feature 3: Orders Management */}
-                            <div className="group rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/50 to-gray-900/30 p-6 backdrop-blur-sm transition-all hover:border-[#ff6b35]/50 hover:shadow-lg hover:shadow-[#ff6b35]/10">
+                            <div className="group rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/50 to-gray-900/30 p-5 backdrop-blur-sm transition-all hover:border-[#ff6b35]/50 hover:shadow-lg hover:shadow-[#ff6b35]/10 sm:p-6 md:p-7">
                                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#ff6b35]/10 text-[#ff6b35] transition-all group-hover:bg-[#ff6b35] group-hover:text-white">
                                     <svg
                                         className="h-6 w-6"
@@ -249,7 +249,7 @@ export default function Welcome({
                             </div>
 
                             {/* Feature 4: QR Transactions */}
-                            <div className="group rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/50 to-gray-900/30 p-6 backdrop-blur-sm transition-all hover:border-[#ff6b35]/50 hover:shadow-lg hover:shadow-[#ff6b35]/10">
+                            <div className="group rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/50 to-gray-900/30 p-5 backdrop-blur-sm transition-all hover:border-[#ff6b35]/50 hover:shadow-lg hover:shadow-[#ff6b35]/10 sm:p-6 md:p-7">
                                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#ff6b35]/10 text-[#ff6b35] transition-all group-hover:bg-[#ff6b35] group-hover:text-white">
                                     <svg
                                         className="h-6 w-6"
@@ -277,7 +277,7 @@ export default function Welcome({
                         </div>
 
                         {/* Stats Section */}
-                        <div className="mt-16 grid gap-8 rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/50 to-gray-900/30 p-8 backdrop-blur-sm sm:grid-cols-3 lg:mt-20">
+                        <div className="mt-12 grid gap-6 rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/50 to-gray-900/30 p-6 backdrop-blur-sm sm:mt-16 sm:gap-8 sm:p-8 md:mt-16 md:grid-cols-3 lg:mt-20">
                             <div className="text-center">
                                 <div className="mb-2 text-4xl font-bold text-[#ff6b35]">
                                     99.9%
@@ -287,7 +287,7 @@ export default function Welcome({
                                 </div>
                             </div>
                             <div className="text-center">
-                                <div className="mb-2 text-4xl font-bold text-[#ff6b35]">
+                                <div className="mb-2 text-3xl font-bold text-[#ff6b35] sm:text-4xl">
                                     24/7
                                 </div>
                                 <div className="text-sm font-medium text-gray-400">
@@ -295,7 +295,7 @@ export default function Welcome({
                                 </div>
                             </div>
                             <div className="text-center">
-                                <div className="mb-2 text-4xl font-bold text-[#ff6b35]">
+                                <div className="mb-2 text-3xl font-bold text-[#ff6b35] sm:text-4xl">
                                     500+
                                 </div>
                                 <div className="text-sm font-medium text-gray-400">
@@ -382,7 +382,7 @@ export default function Welcome({
                         strokeWidth={1}
                     />
                 </g>
-                <footer className="mt-16 w-full text-center text-sm text-gray-500 lg:mt-20">
+                <footer className="mt-12 w-full text-center text-sm text-gray-500 sm:mt-16 lg:mt-20">
                     <p>
                         &copy; {new Date().getFullYear()} Laundry Management
                         System. All rights reserved.
