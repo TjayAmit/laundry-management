@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
+use App\Http\Controllers\BranchController;
+
 Route::get('/', function () {
     return Inertia::render('welcome', [
         'canRegister' => Features::enabled(Features::registration()),
@@ -22,6 +24,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('branches/create', function () {
         return Inertia::render('branches/create');
     })->name('branches.create');
+
+    Route::post('branches', [BranchController::class, 'store'])->name('branches.store');
 });
 
 require __DIR__.'/settings.php';

@@ -3,10 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
+use App\Services\BranchService;
 use Illuminate\Http\Request;
 
 class BranchController extends Controller
 {
+    public function __construct(
+        protected BranchService $service
+    ){}
+
     /**
      * Display a listing of the resource.
      */
@@ -28,7 +33,9 @@ class BranchController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $result = $this->service->create($request);
+
+        return redirect()->route('branches.index', $result);
     }
 
     /**

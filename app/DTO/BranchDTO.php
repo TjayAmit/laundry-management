@@ -8,15 +8,15 @@ class BranchDTO
 {
     public function __construct(
         public string $name,
-        public string $laundry_id,
+        public ?int $laundry_id,
         public string $address,
         public string $status,
         public string $capacity_limit,
         public string $warning_threshold,
         public string $time_open,
         public string $time_close,
-        public float $latitude,
-        public float $longitude
+        public ?float $latitude,
+        public ?float $longitude
     ){}
 
     public static function fromRequest(Request $request): self

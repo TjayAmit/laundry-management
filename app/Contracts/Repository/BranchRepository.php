@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Collection;
 
 class BranchRepository implements BranchRepositoryInterface
 {
-
     public function all(): Collection
     {
         return Branch::all();
