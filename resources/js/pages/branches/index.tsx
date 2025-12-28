@@ -3,7 +3,28 @@ import { type BreadcrumbItem } from '@/types';
 import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { dashboard } from '@/routes';
-import { Plus } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
+} from '@/components/ui/table';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import PageInfo from '@/components/page-info';
 
 type BranchStatus = 'open' | 'closed' | 'maintenance';
 
@@ -30,6 +51,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Index({ branches }: Props) {
     const [branchesData, setBranchesData] = useState<Branch[]>(branches);
+    const [searchQuery, setSearchQuery] = useState<string>('');
+
+    const filteredBranches = branchesData.filter(
+        (branch) =>
+            branch.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            branch.address.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
 
     const handleStatusChange = (id: number, status: BranchStatus) => {
         setBranchesData(
@@ -46,159 +74,230 @@ export default function Index({ branches }: Props) {
     const getStatusColor = (status: BranchStatus) => {
         switch (status) {
             case 'open':
-                return 'bg-green-500/20 text-green-400 border border-green-500/30';
+                return 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800';
             case 'closed':
-                return 'bg-red-500/20 text-red-400 border border-red-500/30';
+                return 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800';
             case 'maintenance':
-                return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
+                return 'bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
         }
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Branches Management" />
-            <div className="space-y-8 p-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold">
-                            Branches Management
-                        </h1>
-                        <p className="mt-2 text-sm text-gray-400">
-                            Manage your branches, track orders and income
-                        </p>
+
+            <div className="space-y-6 p-4 sm:p-6">
+                {/* Header Section */}
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <PageInfo title='Branches Management' description='Manage your branches, track orders and income' />
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <div className="relative flex-1 sm:min-w-[280px] lg:min-w-[320px]">
+                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                            <Input
+                                type="text"
+                                placeholder="Search branches..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="border-gray-800 bg-gradient-to-br from-gray-900/50 to-gray-900/30 pl-10 backdrop-blur-sm focus:border-primary/50 focus:ring-primary/20"
+                            />
+                        </div>
+
+                        <div className="flex gap-3">
+                            {searchQuery && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setSearchQuery('')}
+                                    className="border-gray-800 bg-gradient-to-br from-gray-900/50 to-gray-900/30 hover:bg-gray-800/50"
+                                >
+                                    Clear
+                                </Button>
+                            )}
+                            <Button
+                                asChild
+                                className="bg-gradient-to-r from-primary to-[#ff5722] shadow-lg shadow-primary/25 hover:from-[#ff5722] hover:to-primary hover:shadow-primary/50"
+                            >
+                                <Link href="/branches/create">
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Branch
+                                </Link>
+                            </Button>
+                        </div>
                     </div>
-                    <Link
-                        href={'/branches/create'}
-                        className="flex h-11 items-center gap-2 rounded-lg bg-gradient-to-r from-[#ff6b35] to-[#ff5722] px-6 shadow-lg shadow-[#ff6b35]/25 transition-all duration-300 hover:from-[#ff5722] hover:to-[#ff6b35]"
-                    >
-                        <Plus className="h-5 w-5" />
-                        Add Branch
-                    </Link>
                 </div>
 
-                <div className="overflow-hidden rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm">
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="border-b border-white/10 bg-white/5">
-                                    <th className="px-6 py-4 text-left text-sm font-semibold">
-                                        Branch Name
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold">
-                                        Address
-                                    </th>
-                                    <th className="px-6 py-4 text-center text-sm font-semibold">
-                                        Active Orders
-                                    </th>
-                                    <th className="px-6 py-4 text-center text-sm font-semibold">
-                                        To Be Released
-                                    </th>
-                                    <th className="px-6 py-4 text-center text-sm font-semibold">
-                                        Today's Income
-                                    </th>
-                                    <th className="px-6 py-4 text-center text-sm font-semibold">
-                                        Status
-                                    </th>
-                                    <th className="px-6 py-4 text-center text-sm font-semibold">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {branchesData.map((branch) => (
-                                    <tr
-                                        key={branch.id}
-                                        className="border-b border-white/5 transition-colors hover:bg-white/5"
-                                    >
-                                        <td className="px-6 py-4 font-medium">
-                                            {branch.name}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-400">
-                                            {branch.address}
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className="inline-flex items-center justify-center rounded-full bg-blue-500/20 px-3 py-1 text-sm font-medium text-blue-400">
-                                                {branch.activeOrders}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className="inline-flex items-center justify-center rounded-full bg-purple-500/20 px-3 py-1 text-sm font-medium text-purple-400">
-                                                {branch.toBeReleased}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center font-semibold">
-                                            ₱
-                                            {branch.todayIncome.toLocaleString()}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex justify-center">
-                                                <span
-                                                    className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-medium uppercase ${getStatusColor(branch.status)}`}
-                                                >
-                                                    {branch.status}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <Link
-                                                    href={'/branches/create'}
-                                                    className="rounded-lg bg-white/10 px-3 py-1 text-sm transition-colors hover:bg-white/20"
-                                                >
-                                                    Edit
-                                                </Link>
-                                                <div className="relative">
-                                                    <select
-                                                        value={branch.status}
-                                                        onChange={(e) =>
-                                                            handleStatusChange(
-                                                                branch.id,
-                                                                e.target
-                                                                    .value as BranchStatus,
-                                                            )
-                                                        }
-                                                        className="appearance-none rounded-lg border border-white/20 bg-black/40 py-1 pr-8 pl-2 text-sm transition-colors hover:border-white/40"
-                                                    >
-                                                        <option value="open">
-                                                            Open
-                                                        </option>
-                                                        <option value="closed">
-                                                            Closed
-                                                        </option>
-                                                        <option value="maintenance">
-                                                            Maintenance
-                                                        </option>
-                                                    </select>
-                                                    <svg
-                                                        className="pointer-events-none absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-gray-400"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M19 9l-7 7-7-7"
-                                                        />
-                                                    </svg>
+                {/* Table Card */}
+                <Card className="border shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="text-foreground">
+                            All Branches ({filteredBranches.length})
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="overflow-hidden rounded-lg border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="hover:bg-muted/50">
+                                        <TableHead className="font-semibold">
+                                            Branch Name
+                                        </TableHead>
+                                        <TableHead className="font-semibold">
+                                            Address
+                                        </TableHead>
+                                        <TableHead className="text-center font-semibold">
+                                            Active Orders
+                                        </TableHead>
+                                        <TableHead className="text-center font-semibold">
+                                            To Be Released
+                                        </TableHead>
+                                        <TableHead className="text-center font-semibold">
+                                            Today's Income
+                                        </TableHead>
+                                        <TableHead className="text-center font-semibold">
+                                            Status
+                                        </TableHead>
+                                        <TableHead className="text-center font-semibold">
+                                            Actions
+                                        </TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredBranches.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={7}
+                                                className="py-12 text-center"
+                                            >
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <Search className="h-12 w-12 text-muted-foreground/40" />
+                                                    <p className="text-lg font-medium text-muted-foreground">
+                                                        No branches found
+                                                    </p>
+                                                    <p className="text-sm text-muted-foreground/70">
+                                                        Try adjusting your
+                                                        search criteria
+                                                    </p>
                                                 </div>
-                                                <button
-                                                    onClick={() =>
-                                                        handleDelete(branch.id)
-                                                    }
-                                                    className="rounded-lg bg-red-500/20 px-3 py-1 text-sm text-red-400 transition-colors hover:bg-red-500/30"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        filteredBranches.map((branch) => (
+                                            <TableRow
+                                                key={branch.id}
+                                                className="transition-colors hover:bg-primary/[0.02]"
+                                            >
+                                                <TableCell className="font-medium">
+                                                    {branch.name}
+                                                </TableCell>
+                                                <TableCell className="text-muted-foreground">
+                                                    {branch.address}
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                                                    >
+                                                        {branch.activeOrders}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950 dark:text-purple-300"
+                                                    >
+                                                        {branch.toBeReleased}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-center font-semibold text-primary">
+                                                    ₱
+                                                    {branch.todayIncome.toLocaleString()}
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={cn(
+                                                            'capitalize',
+                                                            getStatusColor(
+                                                                branch.status,
+                                                            ),
+                                                        )}
+                                                    >
+                                                        {branch.status}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            asChild
+                                                            className="hover:bg-accent"
+                                                        >
+                                                            <Link href="/branches/create">
+                                                                Edit
+                                                            </Link>
+                                                        </Button>
+
+                                                        <Select
+                                                            value={
+                                                                branch.status
+                                                            }
+                                                            onValueChange={(
+                                                                value: BranchStatus,
+                                                            ) =>
+                                                                handleStatusChange(
+                                                                    branch.id,
+                                                                    value,
+                                                                )
+                                                            }
+                                                        >
+                                                            <SelectTrigger className="w-[120px]">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem
+                                                                    value="open"
+                                                                    className="hover:bg-accent"
+                                                                >
+                                                                    Open
+                                                                </SelectItem>
+                                                                <SelectItem
+                                                                    value="closed"
+                                                                    className="hover:bg-accent"
+                                                                >
+                                                                    Closed
+                                                                </SelectItem>
+                                                                <SelectItem
+                                                                    value="maintenance"
+                                                                    className="hover:bg-accent"
+                                                                >
+                                                                    Maintenance
+                                                                </SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    branch.id,
+                                                                )
+                                                            }
+                                                            className="border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </AppLayout>
     );
