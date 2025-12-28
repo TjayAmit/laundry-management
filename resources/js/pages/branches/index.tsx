@@ -17,6 +17,10 @@ interface Branch {
     status: BranchStatus;
 }
 
+interface Props {
+    branches: Branch[];
+}
+
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Branch Management',
@@ -24,27 +28,10 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Index() {
-    const [branchesData, setBranchesData] = useState<Branch[]>([
-        {
-            id: 1,
-            name: 'Main Branch',
-            address: '123 Main St',
-            activeOrders: 15,
-            toBeReleased: 8,
-            todayIncome: 25000,
-            status: 'open',
-        },
-        {
-            id: 2,
-            name: 'Downtown Branch',
-            address: '456 Downtown Ave',
-            activeOrders: 22,
-            toBeReleased: 12,
-            todayIncome: 38500,
-            status: 'open',
-        },
-    ]);
+export default function Index({ branches }: Props) {
+    const [branchesData, setBranchesData] = useState<Branch[]>(branches);
+
+    console.info(branchesData);
 
     const handleStatusChange = (id: number, status: BranchStatus) => {
         setBranchesData(

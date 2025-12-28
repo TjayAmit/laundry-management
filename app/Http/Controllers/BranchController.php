@@ -4,10 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Services\BranchService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class BranchController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected BranchService $service
     ){}
@@ -15,9 +20,11 @@ class BranchController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request): Response
     {
-        //
+        return Inertia::render('branches/index', [
+            'branches' => $this->service->get($request)
+        ]);
     }
 
     /**
@@ -25,7 +32,7 @@ class BranchController extends Controller
      */
     public function create()
     {
-        //
+        return Inertia::render('branches/create');
     }
 
     /**

@@ -17,15 +17,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 
-    Route::get('branches', function () {
-        return Inertia::render('branches/index');
-    })->name('branches.index');
-
-    Route::get('branches/create', function () {
-        return Inertia::render('branches/create');
-    })->name('branches.create');
-
-    Route::post('branches', [BranchController::class, 'store'])->name('branches.store');
+    Route::controller(BranchController::class)->group(function () {
+        Route::get('branches', 'index')->name('branches.index');
+        Route::get('branches/create', 'create')->name('branches.create');
+        Route::post('branches', 'store')->name('branches.store');
+    });
 });
 
 require __DIR__.'/settings.php';

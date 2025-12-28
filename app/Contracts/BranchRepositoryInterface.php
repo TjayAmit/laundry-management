@@ -4,10 +4,11 @@ namespace App\Contracts;
 
 use App\DTO\BranchDTO;
 use App\Models\Branch;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 interface BranchRepositoryInterface
 {
-    public function all(): Collection;
+    public function all(Request $request): Collection;
     public function create(BranchDTO $dto): Branch;
 }

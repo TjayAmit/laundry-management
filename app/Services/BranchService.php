@@ -6,6 +6,7 @@ use App\Contracts\BranchRepositoryInterface;
 use App\Contracts\LaundryRepositoryInterface;
 use App\DTO\BranchDTO;
 use App\Models\Branch;
+use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 
 class BranchService
@@ -14,6 +15,11 @@ class BranchService
         protected BranchRepositoryInterface $repository,
         protected LaundryRepositoryInterface $laundryRepository,
     ){}
+
+    public function get(Request $request): Collection
+    {
+        return $this->repository->all($request);
+    }
 
     public function create(Request $request): Branch
     {
