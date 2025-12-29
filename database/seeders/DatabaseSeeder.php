@@ -3,13 +3,13 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
+     * @throws \Exception
      */
     public function run(): void
     {
@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
         }
 
         // Check if this is a fresh project
-        $fresh_project = User::where('role', 'admin')->doesntExist();
+        $fresh_project = User::role('admin')->doesntExist();
 
         if ($fresh_project) {
             try {
