@@ -29,7 +29,9 @@ class DatabaseSeeder extends Seeder
         }
 
         // Check if this is a fresh project
-        $fresh_project = User::role('admin')->doesntExist();
+        $fresh_project = User::whereHas('roles', function($query) {
+            $query->where('name', 'admin');
+        })->doesntExist();
 
         if ($fresh_project) {
             try {
