@@ -46,6 +46,9 @@ jobs:
       - name: Build frontend assets
         run: npm run build
 
+      - name: Check build output
+        run: ls -lh public/build
+
       # Step 7: Deploy to VPS
       - name: Deploy to Hostinger VPS
         env:
@@ -64,8 +67,7 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=10 \
               "$SSH_USER@$SSH_HOST" "echo '✅ SSH connection successful'" || exit 1
 
-          # Create temp directory and upload built assets
-          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" "mkdir -p /tmp/vite-build-$$" || exit 1
+          # Upload build
           scp -i ~/.ssh/deploy_key -r public/build/* "$SSH_USER@$SSH_HOST:/tmp/vite-build-$$/" || exit 1
 
           # Run deployment on VPS
