@@ -94,6 +94,10 @@ jobs:
 
           cd "$RELEASE_PATH"
 
+          echo "🔗 Linking environment file"
+          ln -sfn "$APP_PATH/shared/.env" .env
+          echo "✓ .env symlink created"
+
           echo "📦 Installing PHP dependencies"
           composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
 
@@ -105,8 +109,7 @@ jobs:
           fi
           chmod -R 755 public/build
 
-          echo "🔗 Linking environment and storage"
-          ln -sfn "$APP_PATH/shared/.env" .env
+          echo "🔗 Linking storage"
           rm -rf storage
           ln -sfn "$APP_PATH/shared/storage" storage
 
