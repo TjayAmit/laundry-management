@@ -340,6 +340,16 @@ jobs:
           echo "✓ Migrations completed"
 
           # ============================================
+          # STEP 8.5: Run database seeders
+          # ============================================
+          echo ""
+          echo "🌱 Step 8.5: Running database seeders"
+          echo "------------------------------------------"
+
+          php artisan db:seed --force
+          echo "✓ Database seeding completed"
+
+          # ============================================
           # STEP 9: Optimize application
           # ============================================
           echo ""

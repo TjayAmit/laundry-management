@@ -13,10 +13,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-       $this->call([
-           PermissionAndRoleSeeder::class,
-           UserSeeder::class,
-           LaundrySeeder::class,
-       ]);
+        $fresh_project = User::where('role', 'admin')->doesntExist();
+
+        if ($fresh_project) {
+            $this->call([
+                PermissionAndRoleSeeder::class,
+                UserSeeder::class,
+                LaundrySeeder::class,
+            ]);
+        }
     }
 }
