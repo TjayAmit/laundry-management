@@ -71,7 +71,7 @@ jobs:
           # Run deployment on VPS
           # IMPORTANT: Use double quotes to allow $APP_PATH expansion, then switch to single quotes for the script
           ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=30 \
-              "$SSH_USER@$SSH_HOST" "export APP_PATH='$APP_PATH' && bash -s" << 'EOF'
+              "$SSH_USER@$SSH_HOST" "export APP_PATH='$APP_PATH' && bash -s" << EOF
           set -e
 
           # Verify APP_PATH was passed correctly
