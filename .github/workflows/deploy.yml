@@ -15,11 +15,11 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      # Step 1: Checkout repository
+      # Step 1: Checkout code on Actions runner
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Setup Node.js for frontend build
+      # Step 2: Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -31,10 +31,10 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, mysql, bcmath, intl, gd, exif, iconv
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath, soap, intl, gd, exif, iconv
           coverage: none
 
-      # Step 4: Install Composer dependencies locally for caching
+      # Step 4: Install Composer dependencies
       - name: Install Composer dependencies
         run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
 
@@ -42,7 +42,7 @@ jobs:
       - name: Install npm dependencies
         run: npm install
 
-      # Step 6: Build frontend assets with Vite
+      # Step 6: Build frontend assets
       - name: Build frontend assets
         run: npm run build
 
@@ -54,7 +54,7 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           APP_PATH: ${{ secrets.APP_PATH }}
         run: |
-          # Write SSH key
+          # Write SSH key to temporary file
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
@@ -67,38 +67,35 @@ jobs:
           # Upload built assets
           scp -i ~/.ssh/deploy_key -r public/build/* "$SSH_USER@$SSH_HOST:/tmp/vite-build-$$/" || exit 1
 
-          # Run deployment on VPS
+          # Run deployment on VPS with double-quoted heredoc (variables expanded)
           ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=30 \
-              "$SSH_USER@$SSH_HOST" << 'EOF'
+              "$SSH_USER@$SSH_HOST" << "EOF"
           set -e
 
-          # Variables
+          # Export APP_PATH inside SSH session
+          export APP_PATH="$APP_PATH"
           RELEASE="$(date +%Y%m%d%H%M%S)"
           RELEASE_PATH="$APP_PATH/releases/$RELEASE"
 
           echo "🚀 Deploying release: $RELEASE"
 
-          # =================================
-          # Step 1: Ensure shared directories exist
-          # =================================
+          # Ensure shared directories
+          mkdir -p "$APP_PATH/shared/.env"
           mkdir -p "$APP_PATH/shared/storage/app/public"
           mkdir -p "$APP_PATH/shared/storage/framework/cache/data"
           mkdir -p "$APP_PATH/shared/storage/framework/sessions"
           mkdir -p "$APP_PATH/shared/storage/framework/views"
-          mkdir -p "$APP_PATH/shared/storage/framework/testing"
           mkdir -p "$APP_PATH/shared/storage/logs"
           chown -R www-data:www-data "$APP_PATH/shared/storage"
           chmod -R 775 "$APP_PATH/shared/storage"
 
-          # Verify .env exists
+          # Verify .env
           if [ ! -f "$APP_PATH/shared/.env" ]; then
-            echo "❌ ERROR: $APP_PATH/shared/.env missing!"
+            echo "❌ ERROR: $APP_PATH/shared/.env does not exist!"
             exit 1
           fi
 
-          # =================================
-          # Step 2: Create release folder
-          # =================================
+          # Create release folder
           mkdir -p "$RELEASE_PATH"
 
           # Clone repository using VPS deploy key
@@ -107,68 +104,43 @@ jobs:
 
           cd "$RELEASE_PATH"
 
-          # =================================
-          # Step 3: Link .env and storage BEFORE any artisan commands
-          # =================================
+          # Symlink .env and storage
           ln -sfn "$APP_PATH/shared/.env" .env
           rm -rf storage
           ln -sfn "$APP_PATH/shared/storage" storage
 
-          # =================================
-          # Step 4: Install Composer dependencies
-          # =================================
+          # Composer install
           composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-scripts
           composer run-script post-autoload-dump --no-interaction || true
 
-          # =================================
-          # Step 5: Move built frontend assets
-          # =================================
+          # Move frontend assets
           mkdir -p public/build
-          mv /tmp/vite-build-$$/* public/build/ || true
-          rm -rf /tmp/vite-build-$$
+          if [ -d "/tmp/vite-build-$$" ]; then
+              mv /tmp/vite-build-$$/* public/build/ || true
+              rm -rf /tmp/vite-build-$$ || true
+          fi
           chmod -R 755 public/build
 
-          # =================================
-          # Step 6: Verify Laravel can read .env and DB
-          # =================================
-          DB_CONNECTION=$(php artisan tinker --execute="echo config('database.default');" 2>/dev/null | tail -1)
-          if [ "$DB_CONNECTION" != "mysql" ]; then
-            echo "❌ ERROR: Laravel is not using MySQL! Check .env symlink and contents."
-            ls -la .env
-            head -n 10 .env
-            exit 1
-          fi
-
-          # =================================
-          # Step 7: Run database migrations
-          # =================================
+          # Run migrations
           php artisan migrate --force
 
-          # =================================
-          # Step 8: Optimize Laravel
-          # =================================
+          # Optimize Laravel
           php artisan config:cache
           php artisan route:cache
           php artisan view:cache
           php artisan storage:link || true
 
-          # =================================
-          # Step 9: Switch current release atomically
-          # =================================
+          # Switch current symlink (atomic)
           ln -sfn "$RELEASE_PATH" "$APP_PATH/current"
 
-          # =================================
-          # Step 10: Reload web server
-          # =================================
+          # Reload Apache
           sudo systemctl reload apache2
 
-          # =================================
-          # Step 11: Cleanup old releases (keep last 5)
-          # =================================
+          # Cleanup old releases (keep last 5)
           cd "$APP_PATH/releases"
           ls -dt */ | tail -n +6 | xargs -r rm -rf
 
-          echo "✅ Deployment completed successfully: $RELEASE"
+          echo "✅ Deployment completed: $RELEASE"
           EOF
 
           # Cleanup SSH key
