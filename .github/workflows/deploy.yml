@@ -18,11 +18,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
-
       - name: Deploy to Hostinger VPS
         run: |
           ssh -o StrictHostKeyChecking=no \
@@ -36,7 +31,10 @@ jobs:
           echo "🚀 Deploying release: $RELEASE"
 
           mkdir -p "$RELEASE_PATH"
-          git clone git@github.com:TjayAmit/laundry-management.git "$RELEASE_PATH"
+
+          echo "🔄 Cloning repository using explicit SSH key"
+          git clone -c core.sshCommand="ssh -i /root/.ssh/id_deploy -o StrictHostKeyChecking=no" \
+              git@github.com:TjayAmit/laundry-management.git "$RELEASE_PATH"
 
           cd "$RELEASE_PATH"
 
