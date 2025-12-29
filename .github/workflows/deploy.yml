@@ -64,8 +64,9 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=10 \
               "$SSH_USER@$SSH_HOST" "echo '✅ SSH connection successful'" || exit 1
 
-          # Upload built assets
-          scp -i ~/.ssh/deploy_key -r public/build "$SSH_USER@$SSH_HOST:/tmp/vite-build-$$" || exit 1
+          # Create temp directory and upload built assets
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" "mkdir -p /tmp/vite-build-$$" || exit 1
+          scp -i ~/.ssh/deploy_key -r public/build/* "$SSH_USER@$SSH_HOST:/tmp/vite-build-$$/" || exit 1
 
           # Run deployment on VPS
           ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=30 \
@@ -98,19 +99,34 @@ jobs:
 
           echo "📦 Moving built assets to release"
           mkdir -p public/build
-          mv /tmp/vite-build-$$ public/build || mv /tmp/vite-build-$$ public/ || true
-          rm -rf /tmp/vite-build-$$ 2>/dev/null || true
+          if [ -d "/tmp/vite-build-$$" ]; then
+            mv /tmp/vite-build-$$/* public/build/ 2>/dev/null || true
+            rm -rf /tmp/vite-build-$$ 2>/dev/null || true
+          fi
+          chmod -R 755 public/build
 
           echo "🔗 Linking environment and storage"
           ln -sfn "$APP_PATH/shared/.env" .env
           rm -rf storage
           ln -sfn "$APP_PATH/shared/storage" storage
 
+          echo "🔨 Ensuring storage structure"
+          mkdir -p "$APP_PATH/shared/storage/framework/cache/data"
+          mkdir -p "$APP_PATH/shared/storage/framework/sessions"
+          mkdir -p "$APP_PATH/shared/storage/framework/views"
+          mkdir -p "$APP_PATH/shared/storage/framework/testing"
+          mkdir -p "$APP_PATH/shared/storage/logs"
+          mkdir -p "$APP_PATH/shared/storage/app/public"
+          chown -R www-data:www-data "$APP_PATH/shared/storage"
+          chmod -R 775 "$APP_PATH/shared/storage"
+
           echo "🧱 Running migrations"
           php artisan migrate --force
 
           echo "⚡ Optimizing Laravel"
-          php artisan optimize
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
           php artisan storage:link || true
 
           echo "🔁 Switching current release"
