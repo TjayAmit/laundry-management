@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Setup Node.js
+      # Step 2: Setup Node.js for frontend build
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -31,7 +31,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_mysql, bcmath, soap, intl, gd, exif, iconv
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
           coverage: none
 
       # Step 4: Install Composer dependencies
@@ -42,7 +42,7 @@ jobs:
       - name: Install npm dependencies
         run: npm install
 
-      # Step 6: Build frontend assets
+      # Step 6: Build frontend assets with Vite
       - name: Build frontend assets
         run: npm run build
 
@@ -64,84 +64,364 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=10 \
               "$SSH_USER@$SSH_HOST" "echo '✅ SSH connection successful'" || exit 1
 
-          # Upload built assets
+          # Create temp directory and upload built assets
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" "mkdir -p /tmp/vite-build-$$" || exit 1
           scp -i ~/.ssh/deploy_key -r public/build/* "$SSH_USER@$SSH_HOST:/tmp/vite-build-$$/" || exit 1
 
-          # Run deployment on VPS with double-quoted heredoc (variables expanded)
+          # Run deployment on VPS
+          # IMPORTANT: Use double quotes to allow $APP_PATH expansion, then switch to single quotes for the script
           ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=30 \
-              "$SSH_USER@$SSH_HOST" << "EOF"
+              "$SSH_USER@$SSH_HOST" "export APP_PATH='$APP_PATH' && bash -s" << 'EOF'
           set -e
 
-          # Export APP_PATH inside SSH session
-          export APP_PATH="$APP_PATH"
+          # Verify APP_PATH was passed correctly
+          if [ -z "$APP_PATH" ]; then
+            echo "❌ FATAL: APP_PATH environment variable is not set!"
+            exit 1
+          fi
+
+          echo "Using APP_PATH: $APP_PATH"
+
           RELEASE="$(date +%Y%m%d%H%M%S)"
           RELEASE_PATH="$APP_PATH/releases/$RELEASE"
 
-          echo "🚀 Deploying release: $RELEASE"
+          echo "=========================================="
+          echo "🚀 Starting Deployment: $RELEASE"
+          echo "=========================================="
 
-          # Ensure shared directories
-          mkdir -p "$APP_PATH/shared/.env"
+          # ============================================
+          # STEP 1: Verify and setup shared infrastructure
+          # ============================================
+          echo ""
+          echo "📁 Step 1: Setting up shared infrastructure"
+          echo "------------------------------------------"
+
+          # Create base directories if they don't exist
+          mkdir -p "$APP_PATH/releases"
+          mkdir -p "$APP_PATH/shared"
+
+          # Create all shared storage directories with proper structure
+          echo "Creating storage directories..."
           mkdir -p "$APP_PATH/shared/storage/app/public"
           mkdir -p "$APP_PATH/shared/storage/framework/cache/data"
           mkdir -p "$APP_PATH/shared/storage/framework/sessions"
           mkdir -p "$APP_PATH/shared/storage/framework/views"
+          mkdir -p "$APP_PATH/shared/storage/framework/testing"
           mkdir -p "$APP_PATH/shared/storage/logs"
-          chown -R www-data:www-data "$APP_PATH/shared/storage"
+
+          # Set ownership and permissions
+          chown -R www-data:www-data "$APP_PATH/shared/storage" 2>/dev/null || true
           chmod -R 775 "$APP_PATH/shared/storage"
 
-          # Verify .env
+          echo "✓ Storage structure created"
+
+          # ============================================
+          # STEP 2: Verify .env file
+          # ============================================
+          echo ""
+          echo "🔍 Step 2: Verifying .env configuration"
+          echo "------------------------------------------"
+
           if [ ! -f "$APP_PATH/shared/.env" ]; then
-            echo "❌ ERROR: $APP_PATH/shared/.env does not exist!"
+            echo "❌ FATAL ERROR: $APP_PATH/shared/.env does not exist!"
+            echo ""
+            echo "Please create the .env file first:"
+            echo "  sudo nano $APP_PATH/shared/.env"
+            echo ""
+            echo "Minimum required configuration:"
+            echo "  DB_CONNECTION=mysql"
+            echo "  DB_HOST=127.0.0.1"
+            echo "  DB_PORT=3306"
+            echo "  DB_DATABASE=your_database"
+            echo "  DB_USERNAME=your_user"
+            echo "  DB_PASSWORD=your_password"
+            echo "  APP_KEY=base64:..."
             exit 1
           fi
 
-          # Create release folder
+          # Check if .env is readable
+          if [ ! -r "$APP_PATH/shared/.env" ]; then
+            echo "Fixing .env permissions..."
+            chmod 644 "$APP_PATH/shared/.env"
+          fi
+
+          # Verify MySQL configuration
+          if ! grep -q "DB_CONNECTION=mysql" "$APP_PATH/shared/.env"; then
+            echo "❌ FATAL ERROR: DB_CONNECTION=mysql not found in .env"
+            echo ""
+            echo "Current DB_CONNECTION setting:"
+            grep "DB_CONNECTION" "$APP_PATH/shared/.env" || echo "  (not set)"
+            echo ""
+            echo "Please update $APP_PATH/shared/.env with:"
+            echo "  DB_CONNECTION=mysql"
+            exit 1
+          fi
+
+          # Display current DB configuration (without passwords)
+          echo "Current database configuration:"
+          grep "^DB_CONNECTION" "$APP_PATH/shared/.env"
+          grep "^DB_HOST" "$APP_PATH/shared/.env" || echo "  DB_HOST not set"
+          grep "^DB_DATABASE" "$APP_PATH/shared/.env" || echo "  DB_DATABASE not set"
+
+          echo "✓ .env file verified and readable"
+
+          # ============================================
+          # STEP 3: Clone repository
+          # ============================================
+          echo ""
+          echo "📦 Step 3: Creating new release"
+          echo "------------------------------------------"
+
           mkdir -p "$RELEASE_PATH"
 
-          # Clone repository using VPS deploy key
-          git clone -c core.sshCommand="ssh -i /root/.ssh/id_deploy -o StrictHostKeyChecking=no" \
-              git@github.com:TjayAmit/laundry-management.git "$RELEASE_PATH"
+          echo "Cloning repository..."
+          if ! git clone -c core.sshCommand="ssh -i /root/.ssh/id_deploy -o StrictHostKeyChecking=no" \
+              git@github.com:TjayAmit/laundry-management.git "$RELEASE_PATH" 2>&1; then
+            echo "❌ Git clone failed!"
+            exit 1
+          fi
 
           cd "$RELEASE_PATH"
+          echo "✓ Repository cloned to: $RELEASE_PATH"
 
-          # Symlink .env and storage
-          ln -sfn "$APP_PATH/shared/.env" .env
-          rm -rf storage
+          # ============================================
+          # STEP 4: Create symlinks BEFORE any Laravel commands
+          # ============================================
+          echo ""
+          echo "🔗 Step 4: Creating symlinks"
+          echo "------------------------------------------"
+
+          # Remove any existing storage directory from repo
+          if [ -d "storage" ] && [ ! -L "storage" ]; then
+            echo "Removing repository storage directory..."
+            rm -rf storage
+          fi
+
+          # Create storage symlink
+          echo "Linking shared storage..."
           ln -sfn "$APP_PATH/shared/storage" storage
 
-          # Composer install
-          composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-scripts
-          composer run-script post-autoload-dump --no-interaction || true
-
-          # Move frontend assets
-          mkdir -p public/build
-          if [ -d "/tmp/vite-build-$$" ]; then
-              mv /tmp/vite-build-$$/* public/build/ || true
-              rm -rf /tmp/vite-build-$$ || true
+          # Verify storage symlink
+          if [ ! -L "storage" ]; then
+            echo "❌ ERROR: storage is not a symlink!"
+            ls -la storage
+            exit 1
           fi
-          chmod -R 755 public/build
 
-          # Run migrations
+          if [ ! -d "storage" ]; then
+            echo "❌ ERROR: storage symlink points to non-existent directory!"
+            ls -la storage
+            ls -la "$APP_PATH/shared/"
+            exit 1
+          fi
+
+          echo "✓ Storage symlink created: storage -> $APP_PATH/shared/storage"
+
+          # Create .env symlink
+          echo "Linking .env file..."
+          ln -sfn "$APP_PATH/shared/.env" .env
+
+          # Verify .env symlink
+          if [ ! -L ".env" ]; then
+            echo "❌ ERROR: .env is not a symlink!"
+            ls -la .env
+            exit 1
+          fi
+
+          if [ ! -f ".env" ]; then
+            echo "❌ ERROR: .env symlink points to non-existent file!"
+            ls -la .env
+            ls -la "$APP_PATH/shared/.env"
+            exit 1
+          fi
+
+          echo "✓ .env symlink created: .env -> $APP_PATH/shared/.env"
+
+          # Display symlink verification
+          echo ""
+          echo "Symlink verification:"
+          ls -lh .env storage
+
+          # ============================================
+          # STEP 5: Install dependencies
+          # ============================================
+          echo ""
+          echo "📦 Step 5: Installing dependencies"
+          echo "------------------------------------------"
+
+          # Install Composer dependencies without running scripts yet
+          echo "Installing Composer packages..."
+          composer install \
+            --no-dev \
+            --prefer-dist \
+            --optimize-autoloader \
+            --no-interaction \
+            --no-scripts \
+            --no-progress \
+            --quiet
+
+          # Run post-autoload scripts (these should work now that .env exists)
+          echo "Running post-install scripts..."
+          composer run-script post-autoload-dump --no-interaction 2>&1 || {
+            echo "⚠️  Warning: post-autoload-dump had issues, continuing..."
+          }
+
+          echo "✓ Dependencies installed"
+
+          # ============================================
+          # STEP 6: Deploy built assets
+          # ============================================
+          echo ""
+          echo "📦 Step 6: Deploying frontend assets"
+          echo "------------------------------------------"
+
+          mkdir -p public/build
+
+          if [ -d "/tmp/vite-build-$$" ]; then
+            echo "Moving built assets from temp..."
+            mv /tmp/vite-build-$$/* public/build/ 2>/dev/null || true
+            rm -rf /tmp/vite-build-$$ 2>/dev/null || true
+            chmod -R 755 public/build
+            echo "✓ Assets deployed"
+          else
+            echo "⚠️  No built assets found in /tmp/vite-build-$$"
+          fi
+
+          # ============================================
+          # STEP 7: Verify Laravel configuration
+          # ============================================
+          echo ""
+          echo "🔍 Step 7: Verifying Laravel reads configuration correctly"
+          echo "------------------------------------------"
+
+          # Quick check that Laravel can bootstrap
+          echo "Testing Laravel bootstrap..."
+          if ! php artisan --version >/dev/null 2>&1; then
+            echo "❌ ERROR: Laravel cannot bootstrap!"
+            echo "Attempting to show error:"
+            php artisan --version
+            exit 1
+          fi
+
+          # Check database connection setting
+          echo "Checking database configuration..."
+          DB_CHECK=$(php artisan tinker --execute="echo config('database.default');" 2>&1 | tail -1)
+
+          echo "Laravel reports database connection: $DB_CHECK"
+
+          if [ "$DB_CHECK" = "sqlite" ]; then
+            echo "❌ FATAL ERROR: Laravel is using SQLite instead of MySQL!"
+            echo ""
+            echo "This means .env is not being read correctly."
+            echo ""
+            echo "Debug information:"
+            echo "  .env symlink: $(ls -lh .env)"
+            echo "  .env exists: $(test -f .env && echo 'YES' || echo 'NO')"
+            echo "  .env readable: $(test -r .env && echo 'YES' || echo 'NO')"
+            echo ""
+            echo "First 5 lines of .env:"
+            head -n 5 .env
+            echo ""
+            exit 1
+          fi
+
+          echo "✓ Laravel is correctly configured to use: $DB_CHECK"
+
+          # ============================================
+          # STEP 8: Run migrations
+          # ============================================
+          echo ""
+          echo "🧱 Step 8: Running database migrations"
+          echo "------------------------------------------"
+
           php artisan migrate --force
+          echo "✓ Migrations completed"
 
-          # Optimize Laravel
+          # ============================================
+          # STEP 9: Optimize application
+          # ============================================
+          echo ""
+          echo "⚡ Step 9: Optimizing application"
+          echo "------------------------------------------"
+
           php artisan config:cache
           php artisan route:cache
           php artisan view:cache
-          php artisan storage:link || true
+          php artisan storage:link 2>&1 || echo "  (storage:link skipped - may already exist)"
 
-          # Switch current symlink (atomic)
+          echo "✓ Application optimized"
+
+          # ============================================
+          # STEP 10: Atomic release switch
+          # ============================================
+          echo ""
+          echo "🔁 Step 10: Activating new release"
+          echo "------------------------------------------"
+
+          # Create or update the current symlink
           ln -sfn "$RELEASE_PATH" "$APP_PATH/current"
 
-          # Reload Apache
-          sudo systemctl reload apache2
+          # Verify current symlink
+          if [ ! -L "$APP_PATH/current" ]; then
+            echo "❌ ERROR: Failed to create current symlink!"
+            exit 1
+          fi
 
-          # Cleanup old releases (keep last 5)
+          echo "✓ Current release symlink: $APP_PATH/current -> $RELEASE_PATH"
+
+          # ============================================
+          # STEP 11: Reload web server
+          # ============================================
+          echo ""
+          echo "🔄 Step 11: Reloading web server"
+          echo "------------------------------------------"
+
+          if sudo systemctl reload apache2; then
+            echo "✓ Apache reloaded"
+          else
+            echo "⚠️  Apache reload failed, trying restart..."
+            sudo systemctl restart apache2 && echo "✓ Apache restarted" || echo "❌ Apache restart failed"
+          fi
+
+          # ============================================
+          # STEP 12: Cleanup old releases
+          # ============================================
+          echo ""
+          echo "🧹 Step 12: Cleaning up old releases"
+          echo "------------------------------------------"
+
           cd "$APP_PATH/releases"
-          ls -dt */ | tail -n +6 | xargs -r rm -rf
 
-          echo "✅ Deployment completed: $RELEASE"
+          # Count releases
+          RELEASE_COUNT=$(ls -1 | wc -l)
+          echo "Total releases: $RELEASE_COUNT"
+
+          if [ "$RELEASE_COUNT" -gt 5 ]; then
+            echo "Removing old releases (keeping last 5)..."
+            ls -1t | tail -n +6 | xargs -r rm -rf
+            echo "✓ Old releases cleaned"
+          else
+            echo "✓ No cleanup needed (less than 5 releases)"
+          fi
+
+          # ============================================
+          # Deployment complete
+          # ============================================
+          echo ""
+          echo "=========================================="
+          echo "✅ DEPLOYMENT SUCCESSFUL"
+          echo "=========================================="
+          echo "Release: $RELEASE"
+          echo "Path: $RELEASE_PATH"
+          echo "Current: $APP_PATH/current"
+          echo ""
+          echo "Verification:"
+          ls -lh "$APP_PATH/current"
+          echo ""
           EOF
 
-          # Cleanup SSH key
+          # Cleanup
           rm -f ~/.ssh/deploy_key
+
+          echo ""
+          echo "🎉 Deployment workflow completed!"
