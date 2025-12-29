@@ -26,15 +26,27 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      # Step 3: Install npm dependencies
+      # Step 3: Setup PHP
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+          coverage: none
+
+      # Step 4: Install Composer dependencies
+      - name: Install Composer dependencies
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+
+      # Step 5: Install npm dependencies
       - name: Install npm dependencies
         run: npm install
 
-      # Step 4: Build frontend assets with Vite
+      # Step 6: Build frontend assets with Vite
       - name: Build frontend assets
         run: npm run build
 
-      # Step 5: Deploy to VPS using SSH
+      # Step 7: Deploy to VPS using SSH
       - name: Deploy to Hostinger VPS
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}
