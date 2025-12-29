@@ -15,35 +15,60 @@ jobs:
     timeout-minutes: 20
 
     steps:
+      # Step 1: Checkout code on Actions runner (not the VPS)
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Step 2: Deploy to VPS using SSH
       - name: Deploy to Hostinger VPS
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          ssh -o StrictHostKeyChecking=no \
-              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          # Write SSH key from Secrets to a temp file
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # Add VPS host to known_hosts
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          # Test SSH connection first
+          echo "🔍 Testing SSH connection..."
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=10 \
+              "$SSH_USER@$SSH_HOST" "echo '✅ SSH connection successful'" || {
+            echo "❌ SSH connection failed"
+            rm -f ~/.ssh/deploy_key
+            exit 1
+          }
+
+          # Connect to VPS using that key
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=30 \
+              "$SSH_USER@$SSH_HOST" << 'EOF'
+
           set -e
 
+          # Variables
           APP_PATH="${{ secrets.APP_PATH }}"
           RELEASE="$(date +%Y%m%d%H%M%S)"
           RELEASE_PATH="$APP_PATH/releases/$RELEASE"
 
           echo "🚀 Deploying release: $RELEASE"
 
+          # Create release folder
           mkdir -p "$RELEASE_PATH"
 
-          echo "🔄 Cloning repository using explicit SSH key"
+          # Clone repository using VPS deploy key for GitHub
+          # You need to have /root/.ssh/id_deploy on VPS for this
+          echo "🔄 Cloning repository"
           git clone -c core.sshCommand="ssh -i /root/.ssh/id_deploy -o StrictHostKeyChecking=no" \
               git@github.com:TjayAmit/laundry-management.git "$RELEASE_PATH"
 
           cd "$RELEASE_PATH"
 
           echo "📦 Installing PHP dependencies"
-          composer install \
-            --no-dev \
-            --prefer-dist \
-            --optimize-autoloader \
-            --no-interaction
+          composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
 
           echo "🔗 Linking environment and storage"
           ln -sfn "$APP_PATH/shared/.env" .env
@@ -63,9 +88,12 @@ jobs:
           echo "🔄 Reloading Apache"
           sudo systemctl reload apache2
 
-          echo "🧹 Cleaning old releases"
+          echo "🧹 Cleaning old releases (keep last 5)"
           cd "$APP_PATH/releases"
           ls -dt */ | tail -n +6 | xargs -r rm -rf
 
           echo "✅ Deployment completed"
           EOF
+
+          # Cleanup SSH key
+          rm -f ~/.ssh/deploy_key
