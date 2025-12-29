@@ -46,8 +46,23 @@ jobs:
       - name: Build frontend assets
         run: npm run build
 
-      - name: Check build output
-        run: ls -lh public/build
+      # Step 6a: Verify build output exists and has content
+      - name: Verify build output
+        run: |
+          if [ ! -d "public/build" ]; then
+            echo "❌ ERROR: public/build directory does not exist!"
+            exit 1
+          fi
+
+          FILE_COUNT=$(find public/build -type f | wc -l)
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "❌ ERROR: public/build directory is empty!"
+            exit 1
+          fi
+
+          echo "✅ Build verification passed: $FILE_COUNT files found"
+          echo "Build output contents:"
+          ls -lhR public/build
 
       # Step 7: Deploy to VPS
       - name: Deploy to Hostinger VPS
@@ -67,8 +82,21 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=10 \
               "$SSH_USER@$SSH_HOST" "echo '✅ SSH connection successful'" || exit 1
 
-          # Upload build
+          # Verify build directory before upload
+          if [ ! -d "public/build" ] || [ -z "$(ls -A public/build)" ]; then
+            echo "❌ ERROR: public/build is missing or empty, cannot deploy!"
+            exit 1
+          fi
+
+          echo "📦 Preparing to upload $(find public/build -type f | wc -l) build files..."
+
+          # Create temp directory and upload built assets
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" "mkdir -p /tmp/vite-build-$$" || exit 1
           scp -i ~/.ssh/deploy_key -r public/build/* "$SSH_USER@$SSH_HOST:/tmp/vite-build-$$/" || exit 1
+
+          # Verify upload succeeded
+          UPLOADED_COUNT=$(ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" "find /tmp/vite-build-$$ -type f | wc -l")
+          echo "✅ Uploaded $UPLOADED_COUNT files to VPS"
 
           # Run deployment on VPS
           # IMPORTANT: Use double quotes to allow $APP_PATH expansion, then switch to single quotes for the script
