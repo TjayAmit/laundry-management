@@ -78,29 +78,111 @@ jobs:
 
           echo "🚀 Deploying release: $RELEASE"
 
-          # Create release folder
-          mkdir -p "$RELEASE_PATH"
+          # ============================================
+          # STEP 1: Ensure shared directories exist FIRST
+          # ============================================
+          echo "📁 Setting up shared directories"
 
-          # Ensure shared storage exists
-          mkdir -p "$APP_PATH/shared/storage/logs"
-          mkdir -p "$APP_PATH/shared/storage/framework/{cache,sessions,views}"
+          # Create all shared storage directories with proper structure
           mkdir -p "$APP_PATH/shared/storage/app/public"
+          mkdir -p "$APP_PATH/shared/storage/framework/cache/data"
+          mkdir -p "$APP_PATH/shared/storage/framework/sessions"
+          mkdir -p "$APP_PATH/shared/storage/framework/views"
+          mkdir -p "$APP_PATH/shared/storage/framework/testing"
+          mkdir -p "$APP_PATH/shared/storage/logs"
+
+          # Set ownership and permissions BEFORE deployment
           chown -R www-data:www-data "$APP_PATH/shared/storage"
           chmod -R 775 "$APP_PATH/shared/storage"
 
+          echo "✓ Shared storage directories created"
+
+          # ============================================
+          # STEP 2: Verify .env file exists and is readable
+          # ============================================
+          echo "🔍 Verifying .env file"
+
+          if [ ! -f "$APP_PATH/shared/.env" ]; then
+            echo "❌ ERROR: $APP_PATH/shared/.env does not exist!"
+            echo "Please create it with your database configuration."
+            exit 1
+          fi
+
+          # Check if .env is readable
+          if [ ! -r "$APP_PATH/shared/.env" ]; then
+            echo "❌ ERROR: $APP_PATH/shared/.env is not readable!"
+            echo "Fixing permissions..."
+            chmod 644 "$APP_PATH/shared/.env"
+          fi
+
+          # Verify it contains MySQL configuration (not SQLite)
+          if ! grep -q "DB_CONNECTION=mysql" "$APP_PATH/shared/.env"; then
+            echo "⚠️  WARNING: .env does not contain DB_CONNECTION=mysql"
+            echo "Laravel may default to SQLite!"
+          fi
+
+          echo "✓ .env file verified"
+
+          # ============================================
+          # STEP 3: Create release folder
+          # ============================================
+          echo "📦 Creating release directory"
+          mkdir -p "$RELEASE_PATH"
+
           # Clone repository using VPS deploy key
+          echo "📥 Cloning repository"
           git clone -c core.sshCommand="ssh -i /root/.ssh/id_deploy -o StrictHostKeyChecking=no" \
               git@github.com:TjayAmit/laundry-management.git "$RELEASE_PATH"
 
           cd "$RELEASE_PATH"
 
-          echo "🔗 Linking environment file"
+          # ============================================
+          # STEP 4: Create symlinks BEFORE composer install
+          # ============================================
+          echo "🔗 Creating symlinks"
+
+          # Link .env first
           ln -sfn "$APP_PATH/shared/.env" .env
+
+          # Verify symlink was created correctly
+          if [ ! -L ".env" ] || [ ! -e ".env" ]; then
+            echo "❌ ERROR: .env symlink failed!"
+            ls -la .env
+            exit 1
+          fi
+
           echo "✓ .env symlink created"
 
-          echo "📦 Installing PHP dependencies"
-          composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+          # Link storage directory
+          rm -rf storage
+          ln -sfn "$APP_PATH/shared/storage" storage
 
+          # Verify storage symlink
+          if [ ! -L "storage" ] || [ ! -d "storage" ]; then
+            echo "❌ ERROR: storage symlink failed!"
+            ls -la storage
+            exit 1
+          fi
+
+          echo "✓ storage symlink created"
+
+          # ============================================
+          # STEP 5: Install Composer dependencies
+          # ============================================
+          echo "📦 Installing PHP dependencies"
+
+          # Now composer can safely run without triggering Laravel commands
+          # that need storage or .env
+          composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-scripts
+
+          # Run scripts separately after everything is set up
+          composer run-script post-autoload-dump --no-interaction || true
+
+          echo "✓ Composer dependencies installed"
+
+          # ============================================
+          # STEP 6: Move built assets
+          # ============================================
           echo "📦 Moving built assets to release"
           mkdir -p public/build
           if [ -d "/tmp/vite-build-$$" ]; then
@@ -108,41 +190,68 @@ jobs:
             rm -rf /tmp/vite-build-$$ 2>/dev/null || true
           fi
           chmod -R 755 public/build
+          echo "✓ Assets moved"
 
-          echo "🔗 Linking storage"
-          rm -rf storage
-          ln -sfn "$APP_PATH/shared/storage" storage
+          # ============================================
+          # STEP 7: Verify Laravel can read configuration
+          # ============================================
+          echo "🔍 Testing Laravel configuration"
 
-          echo "🔨 Ensuring storage structure"
-          mkdir -p "$APP_PATH/shared/storage/framework/cache/data"
-          mkdir -p "$APP_PATH/shared/storage/framework/sessions"
-          mkdir -p "$APP_PATH/shared/storage/framework/views"
-          mkdir -p "$APP_PATH/shared/storage/framework/testing"
-          mkdir -p "$APP_PATH/shared/storage/logs"
-          mkdir -p "$APP_PATH/shared/storage/app/public"
-          chown -R www-data:www-data "$APP_PATH/shared/storage"
-          chmod -R 775 "$APP_PATH/shared/storage"
+          # Test that Laravel can read the database connection
+          DB_CONNECTION=$(php artisan tinker --execute="echo config('database.default');" 2>/dev/null | tail -1)
+          echo "Database connection type: $DB_CONNECTION"
 
+          if [ "$DB_CONNECTION" = "sqlite" ]; then
+            echo "❌ ERROR: Laravel is using SQLite instead of MySQL!"
+            echo "This means .env is not being read correctly."
+            echo "Contents of .env symlink:"
+            ls -la .env
+            echo "First few lines of .env:"
+            head -n 10 .env
+            exit 1
+          fi
+
+          echo "✓ Laravel configuration verified"
+
+          # ============================================
+          # STEP 8: Run database migrations
+          # ============================================
           echo "🧱 Running migrations"
           php artisan migrate --force
 
+          # ============================================
+          # STEP 9: Optimize Laravel
+          # ============================================
           echo "⚡ Optimizing Laravel"
           php artisan config:cache
           php artisan route:cache
           php artisan view:cache
+
+          # Create public storage symlink
           php artisan storage:link || true
 
+          # ============================================
+          # STEP 10: Switch to new release (atomic)
+          # ============================================
           echo "🔁 Switching current release"
           ln -sfn "$RELEASE_PATH" "$APP_PATH/current"
 
+          # ============================================
+          # STEP 11: Reload web server
+          # ============================================
           echo "🔄 Reloading Apache"
           sudo systemctl reload apache2
 
+          # ============================================
+          # STEP 12: Cleanup old releases
+          # ============================================
           echo "🧹 Cleaning old releases (keep last 5)"
           cd "$APP_PATH/releases"
           ls -dt */ | tail -n +6 | xargs -r rm -rf
 
-          echo "✅ Deployment completed"
+          echo "✅ Deployment completed successfully"
+          echo "Release: $RELEASE"
+          echo "Path: $RELEASE_PATH"
           EOF
 
           # Cleanup SSH key
