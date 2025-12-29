@@ -19,7 +19,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Deploy to VPS using SSH
+      # Step 2: Setup Node.js for building frontend assets
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # Step 3: Install npm dependencies
+      - name: Install npm dependencies
+        run: npm install
+
+      # Step 4: Build frontend assets with Vite
+      - name: Build frontend assets
+        run: npm run build
+
+      # Step 5: Deploy to VPS using SSH
       - name: Deploy to Hostinger VPS
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}
@@ -43,37 +58,50 @@ jobs:
             exit 1
           }
 
+          # Upload built assets to VPS
+          echo "📤 Uploading built assets..."
+          scp -i ~/.ssh/deploy_key -r public/build "$SSH_USER@$SSH_HOST:/tmp/vite-build-$$" || {
+            echo "❌ Failed to upload build assets"
+            rm -f ~/.ssh/deploy_key
+            exit 1
+          }
+
           # Connect to VPS using that key
           ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=30 \
-              "$SSH_USER@$SSH_HOST" << 'EOF'
+              "$SSH_USER@$SSH_HOST" << EOF
 
           set -e
 
           # Variables
           APP_PATH="${{ secrets.APP_PATH }}"
-          RELEASE="$(date +%Y%m%d%H%M%S)"
-          RELEASE_PATH="$APP_PATH/releases/$RELEASE"
+          RELEASE="\$(date +%Y%m%d%H%M%S)"
+          RELEASE_PATH="\$APP_PATH/releases/\$RELEASE"
 
-          echo "🚀 Deploying release: $RELEASE"
+          echo "🚀 Deploying release: \$RELEASE"
 
           # Create release folder
-          mkdir -p "$RELEASE_PATH"
+          mkdir -p "\$RELEASE_PATH"
 
           # Clone repository using VPS deploy key for GitHub
           # You need to have /root/.ssh/id_deploy on VPS for this
           echo "🔄 Cloning repository"
           git clone -c core.sshCommand="ssh -i /root/.ssh/id_deploy -o StrictHostKeyChecking=no" \
-              git@github.com:TjayAmit/laundry-management.git "$RELEASE_PATH"
+              git@github.com:TjayAmit/laundry-management.git "\$RELEASE_PATH"
 
-          cd "$RELEASE_PATH"
+          cd "\$RELEASE_PATH"
 
           echo "📦 Installing PHP dependencies"
           composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
 
+          echo "📦 Moving built assets to release"
+          mkdir -p public/build
+          mv /tmp/vite-build-$$ public/build || mv /tmp/vite-build-$$ public/ || true
+          rm -rf /tmp/vite-build-$$ 2>/dev/null || true
+
           echo "🔗 Linking environment and storage"
-          ln -sfn "$APP_PATH/shared/.env" .env
+          ln -sfn "\$APP_PATH/shared/.env" .env
           rm -rf storage
-          ln -sfn "$APP_PATH/shared/storage" storage
+          ln -sfn "\$APP_PATH/shared/storage" storage
 
           echo "🧱 Running migrations"
           php artisan migrate --force
@@ -83,13 +111,13 @@ jobs:
           php artisan storage:link || true
 
           echo "🔁 Switching current release"
-          ln -sfn "$RELEASE_PATH" "$APP_PATH/current"
+          ln -sfn "\$RELEASE_PATH" "\$APP_PATH/current"
 
           echo "🔄 Reloading Apache"
           sudo systemctl reload apache2
 
           echo "🧹 Cleaning old releases (keep last 5)"
-          cd "$APP_PATH/releases"
+          cd "\$APP_PATH/releases"
           ls -dt */ | tail -n +6 | xargs -r rm -rf
 
           echo "✅ Deployment completed"
