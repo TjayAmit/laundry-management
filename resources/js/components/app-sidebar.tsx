@@ -27,6 +27,11 @@ const mainNavItems: NavItem[] = [
         href: { url: '/branches', method: 'get' },
         icon: Container,
     },
+    {
+        title: 'Staff',
+        href: { url: '/staffs', method: 'get' },
+        icon: Container,
+    },
 ];
 
 const footerNavItems: NavItem[] = [

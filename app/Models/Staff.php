@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class BranchUser extends Model
+class Staff extends Model
 {
-    /** @use HasFactory<\Database\Factories\BranchUserFactory> */
+    /** @use HasFactory<\Database\Factories\StaffFactory> */
     use HasFactory;
+
+    protected $table = 'staffs';
 
     protected $fillable = [
         'branch_id',

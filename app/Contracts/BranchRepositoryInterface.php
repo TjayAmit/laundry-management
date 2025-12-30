@@ -10,5 +10,6 @@ use Illuminate\Support\Collection;
 interface BranchRepositoryInterface
 {
     public function all(Request $request): Collection;
+    public function selection(Request $request): Collection;
     public function create(BranchDTO $dto): Branch;
 }

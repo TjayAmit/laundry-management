@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BranchUser;
-use App\Services\BranchUserService;
+use App\Contracts\BranchRepositoryInterface;
+use App\Models\Staff;
+use App\Services\BranchService;
+use App\Services\StaffService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class BranchUserController extends Controller
 {
     public function __construct(
-        protected BranchUserService $service
+        protected StaffService $service,
+        protected BranchRepositoryInterface $branchRepository
     ){}
 
     /**
@@ -18,7 +21,7 @@ class BranchUserController extends Controller
      */
     public function index(Request $request)
     {
-        return Inertia::render('branch-users/index', [
+        return Inertia::render('staffs/index', [
             'staffs' => $this->service->getAll($request)
         ]);
     }
@@ -26,9 +29,11 @@ class BranchUserController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        //
+        return Inertia::render('staffs/create', [
+            'branches' => $this->branchRepository->selection($request)
+        ]);
     }
 
     /**
@@ -38,13 +43,13 @@ class BranchUserController extends Controller
     {
         $result = $this->service->create($request);
 
-        return redirect()->route('branch-users.index', $result);
+        return redirect()->route('staffs.index', $result);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(BranchUser $branchUser)
+    public function show(Staff $branchUser)
     {
         //
     }
@@ -52,7 +57,7 @@ class BranchUserController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(BranchUser $branchUser)
+    public function edit(Staff $branchUser)
     {
         //
     }
@@ -60,7 +65,7 @@ class BranchUserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, BranchUser $branchUser)
+    public function update(Request $request, Staff $branchUser)
     {
         //
     }
@@ -68,7 +73,7 @@ class BranchUserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(BranchUser $branchUser)
+    public function destroy(Staff $branchUser)
     {
         //
     }

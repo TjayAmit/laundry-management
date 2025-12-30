@@ -4,14 +4,15 @@ namespace App\DTO;
 
 use Illuminate\Http\Request;
 
-class BranchUserDTO
+class StaffDTO
 {
     public function __construct(
         public string $name,
         public string $email,
         public string $password,
         public int $branch_id,
-        public string $position,
+        public ?int $user_id,
+        public ?string $position,
     ){}
 
     public static function fromRequest(Request $request): self
@@ -19,8 +20,9 @@ class BranchUserDTO
         return new self(
             $request->input('name'),
             $request->input('email'),
-            $request->input('password'),
+            bcrypt($request->input('password')),
             $request->input('branch_id'),
+            $request->input('user_id'),
             $request->input('position')
         );
     }
@@ -32,6 +34,7 @@ class BranchUserDTO
             'email' => $this->email,
             'password' => $this->password,
             'branch_id' => $this->branch_id,
+            'user_id' => $this->user_id,
             'position' => $this->position,
         ];
     }
