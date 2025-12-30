@@ -17,13 +17,13 @@ class DatabaseSeeder extends Seeder
         $completedFile = storage_path('framework/seeding.completed');
 
         // Check if seeding is already completed
-        if (file_exists($completedFile)) {
+        if (file_exists($completedFile) && config('app.env') !== 'local') {
             $this->command->info('Seeding already completed. Skipping...');
             return;
         }
 
         // Check if seeding is currently running
-        if (file_exists($lockFile)) {
+        if (file_exists($lockFile) && config('app.env') !== 'local') {
             $this->command->warn('Seeding is already in progress. Skipping...');
             return;
         }
